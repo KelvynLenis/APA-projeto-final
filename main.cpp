@@ -9,8 +9,13 @@ using namespace std;
 
 int main(int argc, char *argv[]){
 
-  // Inicialização
-  // ======================================
+  // ========== definição de variáveis ===================
+
+  vector<int> b; // vetor de capacidade
+  vector<vector<int>> t; // vetor de tempo
+  vector<vector<int>> c; // vetor de custo
+
+  // ============== Input do arquivo =====================
 
   string fileName = argv[1];
   ifstream myfile (fileName);
@@ -18,14 +23,8 @@ int main(int argc, char *argv[]){
   int num;
   int temp = 0;
 
-  int numberOfServers, numberOfJobs, custo, lineCounter = 1;
-
-  // const int numberOfJobs = n;
-  // const int numberOfServers = m;
-    
-  vector<int> b;
-  vector<vector<int>> t;
-  vector<vector<int>> c;
+  int numberOfServers, numberOfJobs, penalidade = 0;
+  int lineCounter = 1;
 
   if(myfile.is_open()) {
     while (getline(myfile,line)){
@@ -40,11 +39,9 @@ int main(int argc, char *argv[]){
         cout << numberOfServers << endl;
       }
       else if(lineCounter == 3){ // terceira linha
-        custo = stoi(line); // custo de cada penalidade
-        cout << custo << endl;
+        penalidade = stoi(line); // penalidade de cada penalidade
+        cout << penalidade << endl;
       }
-
-      // quarta linha em branco
       
       if(lineCounter == 5) { // quinta linha
         // preenchendo o array b
@@ -52,9 +49,6 @@ int main(int argc, char *argv[]){
           b.push_back(num);
         }
       }
-
-      // sexta linha em branco
-
       else if (lineCounter >= 7 && lineCounter < (7 + numberOfServers)){ // setima linha
         t.push_back(vector<int>());
         while( is >> num){
@@ -69,19 +63,11 @@ int main(int argc, char *argv[]){
         }
       }
 
-      // decima segunda linha em branco
-
       if (lineCounter > (7 + numberOfServers) && lineCounter <= (12 + numberOfServers)){
-        // cout << (7 + numberOfServers + 1) << endl;
-        // cout << 12 + numberOfServers << endl;
-        // cout << temp;
         c.push_back(vector<int>());
         while( is >> num){
-          // cout << num;
-          // cout << "; ";
           c[temp].push_back(num);
         }
-        // cout << endl;
         temp++;
       }
 
@@ -89,37 +75,36 @@ int main(int argc, char *argv[]){
     }
 
     myfile.close();
-  } else {
+  } 
+  else {
     cout << "Unable to open file";
   }
 
-  cout << "T size is:";
-  cout << t.size();
-  cout << endl;
+  cout << "T size is: ";
+  cout << t.size() << " x ";
+  cout << t[0].size() << endl;
+  
+  cout << "C size is: ";
+  cout << c.size() << " x ";
+  cout << c[0].size() << endl;
+
+  // ======================================
+
+
+  // heuristica de construção (algoritmo guloso)
+  // to do
 
   // for ( int i = 0; i < t.size(); i++ ){
   //   for ( int j = 0; j < t[i].size(); j++) {
   //     cout << t[i][j] << "; ";
   //   }
   // }
-  // cout << endl;
-  
-  // cout << "C size is:";
-  // cout << c.size();
-  // cout << endl;
 
-
-  for ( int i = 0; i < c.size(); i++ ){
-    for ( int j = 0; j < c[i].size(); j++) {
-      cout << c[i][j] << "; ";
-    }
-  }
-  cout << endl;
-
-  // ======================================
-
-  // heuristica de construção
-  // to do
+  // for ( int i = 0; i < c.size(); i++ ){
+  //   for ( int j = 0; j < c[i].size(); j++) {
+  //     cout << c[i][j] << "; ";
+  //   }
+  // }
 
   // vizinhaça
   // to do
