@@ -4,6 +4,9 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include <map>
+#include <utility> 
+#include <algorithm>
 
 using namespace std;
 
@@ -16,25 +19,35 @@ void print2DVector(vector<vector<int>> vec){
   cout << endl;
 }
 
-void showAllocationLogs(vector<vector<int>> servers, vector<int> b, int totalCost){
-  // cout << "Servers running: " << servers.size();
-  // cout << endl;
-
-  // cout << "Allocated jobs on server 1: " << servers[0].size();
-  // cout << endl;
-  for ( int i = 0; i < servers.size(); i++ ){
+void showAllocationLogs(vector<vector<pair<int,int>>> servers, vector<int> b, int totalCost, vector<bool> unallocatedJobs, vector<vector<int>> t){
+  for(int i = 0; i < servers.size(); i++){
     int tempTime = 0;
-    for ( int j = 0; j < servers[i].size(); j++) {
-      cout << servers[i][j] << ", ";
-      tempTime += servers[i][j];
+    for(int j = 0; j < servers[i].size(); j++){
+      int jobIndex = servers[i][j].first; // Key-value na qual a key é o número do job e o value é o custo associado
+
+      cout << servers[i][j].second << "; "; // custo c de cada job
+      tempTime += t[i][jobIndex]; // somando o tempo relativo alocado para cada servidor
     }
-    // cout << endl;
-    cout << "Server " << i << " capacity is " << b[i] << endl;
-    cout << "Total time allocated is " << tempTime;
+    cout << endl;
+    cout << "[Server " << i << "] capacity is " << b[i] << endl;
+    cout << "[Server "<< i << "] Total time allocated is " << tempTime;
     cout << endl;
   }
 
+  for(auto job : unallocatedJobs){
+    if(job == true){
+      totalCost += 1000;
+    }
+  }
   cout << "Solution cost: " << totalCost << endl;
+}
+
+void getUnallocatedJobs(vector<bool> unallocatedJobs){
+  int count = 0;
+  for(auto job : unallocatedJobs){
+    if(job == true) count++;
+  }
+  cout << "Number of unallocated jobs: " << count << endl;
 }
 
 int main(int argc, char *argv[]){
@@ -44,7 +57,8 @@ int main(int argc, char *argv[]){
   vector<int> b; // vetor de capacidade
   vector<vector<int>> t; // vetor de tempo
   vector<vector<int>> c; // vetor de custo
-  vector<vector<int>> servers; // vetor de servidores
+  vector<vector<pair<int,int>>> servers; // vetor de servidores
+  vector<bool> unallocatedJobs;
   int numberOfServers, numberOfJobs, penalty = 0;
 
   // ============== Input do arquivo =====================
@@ -70,21 +84,25 @@ int main(int argc, char *argv[]){
         // cout << numberOfServers << endl;
       }
       else if(lineCounter == 3){ // terceira linha
-        penalty = stoi(line); // penalty de cada penalty
+        penalty = stoi(line); // custo de cada penalty
         // cout << penalty << endl;
       }
       
       if(lineCounter == 5) { // quinta linha
-        // preenchendo o array b
+        // preenchendo o vetor b
         while( is >> num){
           b.push_back(num);
         }
       }
       else if (lineCounter >= 7 && lineCounter < (7 + numberOfServers)){ // setima linha
         t.push_back(vector<int>());
+
         while( is >> num){
           // cout << num;
           // cout << "; ";
+          if(unallocatedJobs.size() < numberOfJobs){
+            unallocatedJobs.push_back(true);
+          }
           t[temp].push_back(num);
         }
 
@@ -129,25 +147,38 @@ int main(int argc, char *argv[]){
 
   // criando os servidores e alocando tantos jobs quanto possivel
   for(int i = 0; i < numberOfServers; i++){
-    servers.push_back(vector<int>());
+    servers.push_back(vector<pair<int,int>>());
     int allocatedTime = 0;
     for(int j = 0; j < numberOfJobs; j++){
       if(t[i][j] + allocatedTime <= b[i]){
-        servers[i].push_back(t[i][j]);
-        allocatedTime += t[i][j];
-        totalCost += c[i][j];
-      }
-      else {
-        totalCost += penalty;
+        if(unallocatedJobs[j] == true){
+          pair<int, int> currentJob (j, c[i][j]);
+          servers[i].push_back(currentJob);
+          unallocatedJobs[j] = false; // mudar a flag
+          allocatedTime += t[i][j];
+          totalCost += c[i][j];
+        }
       }
     }
   }
 
-  // showAllocationLogs(servers, b, totalCost);
+  // showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
   // print2DVector(t);
+  // getUnallocatedJobs(unallocatedJobs);
 
-  // vizinhaça
-  // to do
+  // ====== vizinhaça ==========
+  
+  // swap()
+
+  // int serverCost = 0;
+
+  // for(int i = 0; i < servers.size(); i++){
+  //   for(int j = 0; j < servers[i].size(); j++){
+  //     serverCost += servers[i][j];
+  //   }
+  // }
+
+  // 2-opt
 
   // VND
   // to do

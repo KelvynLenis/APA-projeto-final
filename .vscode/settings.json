@@ -7,6 +7,9 @@
     "vector": "cpp",
     "ostream": "cpp",
     "xlocale": "cpp",
-    "string": "cpp"
+    "string": "cpp",
+    "iterator": "cpp",
+    "map": "cpp",
+    "utility": "cpp"
   }
 }
