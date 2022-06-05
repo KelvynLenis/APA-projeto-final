@@ -10,6 +10,14 @@
 
 using namespace std;
 
+class Server {
+  public:    
+    int id;         
+    int cost = 0;
+    int time = 0;        
+    vector<pair<int,int>> jobs;
+};
+
 void print2DVector(vector<vector<int>> vec){
   for ( int i = 0; i < vec.size(); i++ ){
     for ( int j = 0; j < vec[i].size(); j++) {
@@ -19,13 +27,14 @@ void print2DVector(vector<vector<int>> vec){
   cout << endl;
 }
 
-void showAllocationLogs(vector<vector<pair<int,int>>> servers, vector<int> b, int totalCost, vector<bool> unallocatedJobs, vector<vector<int>> t){
+void showAllocationLogs(vector<Server> servers, vector<int> b, int &totalCost, vector<bool> unallocatedJobs, vector<vector<int>> t){
   for(int i = 0; i < servers.size(); i++){
     int tempTime = 0;
-    for(int j = 0; j < servers[i].size(); j++){
-      int jobIndex = servers[i][j].first; // Key-value na qual a key é o número do job e o value é o custo associado
+    for(int j = 0; j < servers[i].jobs.size(); j++){
+      int jobIndex = servers[i].jobs[j].first; // Key-value na qual a key é o número do job e o value é o custo associado
 
-      cout << servers[i][j].second << "; "; // custo c de cada job
+      cout << servers[i].jobs[j].second << "; "; // custo c de cada job
+      // cout << servers[i].jobs[j].first << "; "; // número de cada job
       tempTime += t[i][jobIndex]; // somando o tempo relativo alocado para cada servidor
     }
     cout << endl;
@@ -40,6 +49,26 @@ void showAllocationLogs(vector<vector<pair<int,int>>> servers, vector<int> b, in
     }
   }
   cout << "Solution cost: " << totalCost << endl;
+}
+
+int calculateCost(vector<Server> servers, vector<bool> unallocatedJobs, vector<vector<int>> c){
+  int cost = 0;
+ 
+  for(int i = 0; i < servers.size(); i++){
+    for(int j = 0; j < servers[i].jobs.size(); j++){
+      int jobIndex = servers[i].jobs[j].first; // Key-value na qual a key é o número do job e o value é o custo associado
+      // cout << servers[i][j].second << "; ";
+      cost += servers[i].jobs[j].second;
+    }
+  }
+
+  for(auto job : unallocatedJobs){
+    if(job == true){
+      cost += 1000;
+    }
+  }
+  // cout << "Solution cost: " << cost << endl;
+  return cost;
 }
 
 void getUnallocatedJobs(vector<bool> unallocatedJobs){
@@ -57,8 +86,8 @@ int main(int argc, char *argv[]){
   vector<int> b; // vetor de capacidade
   vector<vector<int>> t; // vetor de tempo
   vector<vector<int>> c; // vetor de custo
-  vector<vector<pair<int,int>>> servers; // vetor de servidores
-  vector<bool> unallocatedJobs;
+  vector<Server> servers; // vetor de servidores
+  vector<bool> unallocatedJobs; // vetor de flags para cada job alocado ou não
   int numberOfServers, numberOfJobs, penalty = 0;
 
   // ============== Input do arquivo =====================
@@ -146,16 +175,20 @@ int main(int argc, char *argv[]){
   int totalCost = 0; // custo da solução
 
   // criando os servidores e alocando tantos jobs quanto possivel
+
   for(int i = 0; i < numberOfServers; i++){
-    servers.push_back(vector<pair<int,int>>());
+    servers.push_back(Server());
+    servers[i].id = i;
     int allocatedTime = 0;
     for(int j = 0; j < numberOfJobs; j++){
       if(t[i][j] + allocatedTime <= b[i]){
         if(unallocatedJobs[j] == true){
           pair<int, int> currentJob (j, c[i][j]);
-          servers[i].push_back(currentJob);
+          servers[i].jobs.push_back(currentJob);
           unallocatedJobs[j] = false; // mudar a flag
           allocatedTime += t[i][j];
+          servers[i].cost += c[i][j];
+          servers[i].time += allocatedTime;
           totalCost += c[i][j];
         }
       }
@@ -166,19 +199,22 @@ int main(int argc, char *argv[]){
   // print2DVector(t);
   // getUnallocatedJobs(unallocatedJobs);
 
+  // cout << totalCost << endl;
+
   // ====== vizinhaça ==========
   
   // swap()
 
-  // int serverCost = 0;
+  totalCost = calculateCost(servers, unallocatedJobs, c);
+  for(int i = 0; i < servers.size(); i++){
+    for(int j = 0; j < servers.size(); j++){
+      for(int k = 0; k < servers[i].jobs.size(); k++){
+        // to do
+      }
+    }
+  }
 
-  // for(int i = 0; i < servers.size(); i++){
-  //   for(int j = 0; j < servers[i].size(); j++){
-  //     serverCost += servers[i][j];
-  //   }
-  // }
-
-  // 2-opt
+  // 2Opt()
 
   // VND
   // to do
