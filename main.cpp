@@ -14,7 +14,8 @@ class Server {
   public:    
     int id;         
     int cost = 0;
-    int time = 0;        
+    int time = 0;
+    int maxTime = 0;       
     vector<pair<int,int>> jobs;
 };
 
@@ -175,10 +176,11 @@ int main(int argc, char *argv[]){
   int totalCost = 0; // custo da solução
 
   // criando os servidores e alocando tantos jobs quanto possivel
-
+  // precisa de uma refatoração ainda.
   for(int i = 0; i < numberOfServers; i++){
     servers.push_back(Server());
     servers[i].id = i;
+    servers[i].maxTime = b[i];
     int allocatedTime = 0;
     for(int j = 0; j < numberOfJobs; j++){
       if(t[i][j] + allocatedTime <= b[i]){
@@ -199,22 +201,43 @@ int main(int argc, char *argv[]){
   // print2DVector(t);
   // getUnallocatedJobs(unallocatedJobs);
 
-  // cout << totalCost << endl;
 
   // ====== vizinhaça ==========
-  
-  // swap()
-
   totalCost = calculateCost(servers, unallocatedJobs, c);
+
+  // swap() versão beta!!! Precisa de revisão ainda!
+  bool foundBetter = false;
+
   for(int i = 0; i < servers.size(); i++){
-    for(int j = 0; j < servers.size(); j++){
-      for(int k = 0; k < servers[i].jobs.size(); k++){
-        // to do
+    for(int j = 0; j < servers[i].jobs.size(); j++){
+      for(int k = j + 1; k < numberOfJobs; k++){
+        if(foundBetter == true){
+          continue;
+        }
+
+        vector<Server> auxServers(servers);
+        pair<int, int> currentJob (j, c[i][j]);
+
+        auxServers[i].jobs[j].first = k;
+        auxServers[i].jobs[j].second = c[i][k];
+        auxServers[i].cost = auxServers[i].cost - c[i][j] + c[i][k];
+        auxServers[i].time = auxServers[i].time - t[i][j] + t[i][k];
+        
+        if(auxServers[i].cost < servers[i].cost){
+          if(auxServers[i].time <= auxServers[i].maxTime){
+            foundBetter = true;
+            cout << "Found a better solution for server " << i << endl;
+            cout << "[server " << i << "] cost is " << servers[i].cost << endl;
+            cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
+          }
+        }
       }
     }
   }
 
-  // 2Opt()
+  // showAllocationLogs(auxServers, b, totalCost, unallocatedJobs, t);
+
+  // 2-Opt()
 
   // VND
   // to do
