@@ -88,6 +88,35 @@ void getUnallocatedJobs(vector<bool> unallocatedJobs){
   cout << "Number of unallocated jobs: " << count << endl;
 }
 
+void swap(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int j, int k, vector<vector<int>> &t, vector<vector<int>> &c){
+  int totalCost;
+  vector<Server> auxServers(servers);
+  int jobIndex = auxServers[i].jobs[j].first;
+
+  // auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
+  // auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
+  
+  auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
+  auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
+
+  auxServers[i].jobs[j].first = k;
+  auxServers[i].jobs[j].second = c[i][k];
+  
+  if(auxServers[i].cost < servers[i].cost){
+    if(auxServers[i].time <= auxServers[i].maxTime){
+      cout << "Found a better solution for server " << i << endl;
+      servers[i].printJobsContent();
+
+      auxServers[i].printJobsContent();
+      cout << "[server " << i << "] cost is " << servers[i].cost << endl;
+      cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
+      // cout << "[server " << i << "] time allocated is " << servers[i].time << endl;
+      // cout << "[server " << i << "] new time allocated is " << auxServers[i].time << endl;
+      totalCost = calculateCost(auxServers, unallocatedJobs, c);
+    }
+  }
+}
+
 int main(int argc, char *argv[]){
 
   // ========== definição de variáveis ===================
@@ -214,29 +243,14 @@ int main(int argc, char *argv[]){
   // swap() versão beta!!! Precisa de revisão ainda!
   bool foundBetter = false;
 
-  for(int i = 0; i < servers.size(); i++){
-    for(int j = 0; j < servers[i].jobs.size(); j++){
-      for(int k = j + 1; k < numberOfJobs; k++){
+  for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
+    for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
+      foundBetter = false;
+      for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
         if(foundBetter == true){
           continue;
         }
-
-        vector<Server> auxServers(servers);
-        pair<int, int> currentJob (j, c[i][j]);
-
-        auxServers[i].jobs[j].first = k;
-        auxServers[i].jobs[j].second = c[i][k];
-        auxServers[i].cost = auxServers[i].cost - c[i][j] + c[i][k];
-        auxServers[i].time = auxServers[i].time - t[i][j] + t[i][k];
-        
-        if(auxServers[i].cost < servers[i].cost){
-          if(auxServers[i].time <= auxServers[i].maxTime){
-            foundBetter = true;
-            cout << "Found a better solution for server " << i << endl;
-            cout << "[server " << i << "] cost is " << servers[i].cost << endl;
-            cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
-          }
-        }
+        swap(servers, unallocatedJobs, i, j, k, t, c);
       }
     }
   }
