@@ -12,11 +12,19 @@ using namespace std;
 
 class Server {
   public:    
-    int id;         
-    int cost = 0;
-    int time = 0;
-    int maxTime = 0;       
-    vector<pair<int,int>> jobs;
+    int id;         // identificador do servidor
+    int cost = 0;   // custo total de cada servidor
+    int time = 0;   // tempo total alocado de cada servidor
+    int maxTime = 0; // capacidade total de cada servidor
+    vector<pair<int,int>> jobs; // vetor de jobs alocados
+
+    void printJobsContent() {
+      cout << "[jobIndex, jobCost]: ";
+      for(auto job : jobs){
+        cout << "["<< job.first << ", " << job.second << "], "; 
+      }
+      cout << endl;
+    }
 };
 
 void print2DVector(vector<vector<int>> vec){
@@ -68,7 +76,7 @@ int calculateCost(vector<Server> servers, vector<bool> unallocatedJobs, vector<v
       cost += 1000;
     }
   }
-  // cout << "Solution cost: " << cost << endl;
+  cout << "Solution cost: " << cost << endl;
   return cost;
 }
 
@@ -181,17 +189,15 @@ int main(int argc, char *argv[]){
     servers.push_back(Server());
     servers[i].id = i;
     servers[i].maxTime = b[i];
-    int allocatedTime = 0;
     for(int j = 0; j < numberOfJobs; j++){
-      if(t[i][j] + allocatedTime <= b[i]){
+      if(t[i][j] + servers[i].time <= servers[i].maxTime){
         if(unallocatedJobs[j] == true){
-          pair<int, int> currentJob (j, c[i][j]);
-          servers[i].jobs.push_back(currentJob);
+          pair<int, int> currentJob (j, c[i][j]); // pegando separadamente o indice do job e seu custo
+
+          servers[i].jobs.push_back(currentJob); // insere o job e seu custo no vetor de jobs
           unallocatedJobs[j] = false; // mudar a flag
-          allocatedTime += t[i][j];
-          servers[i].cost += c[i][j];
-          servers[i].time += allocatedTime;
-          totalCost += c[i][j];
+          servers[i].cost += c[i][j]; // atualiza custo
+          servers[i].time += t[i][j]; // atualiza tempo alocado
         }
       }
     }
