@@ -30,6 +30,12 @@ class Server {
       }
       cout << endl;
     }
+
+    void updateCost(){
+      for(auto job: jobs){
+        cost += job.second;
+      }
+    }
 };
 
 void print2DVector(vector<vector<int>> vec){
@@ -93,7 +99,8 @@ void getUnallocatedJobs(vector<bool> unallocatedJobs){
   cout << "Number of unallocated jobs: " << count << endl;
 }
 
-void swap(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int j, int k, vector<vector<int>> &t, vector<vector<int>> &c){
+// swap de jobs alocados e não alocados, verifica e calcula custos
+void swapAll(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int j, int k, vector<vector<int>> &t, vector<vector<int>> &c){
   int totalCost;
   int newTime, newCost; // variaveis para comparar com os valores antigos
   vector<Server> auxServers(servers); // copia do vetor original (sujeito a otimização)
@@ -103,44 +110,44 @@ void swap(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int j, 
   newCost = servers[i].cost - c[i][jobIndex] + c[i][k];
   newTime = servers[i].time - t[i][jobIndex] + t[i][k];
   
-  auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
-  auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
-
-  auxServers[i].jobs[j].first = k;
-  auxServers[i].jobs[j].second = c[i][k];
+  // auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
+  // auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
 
   // troca não otimizada
-  if(auxServers[i].cost < servers[i].cost){
-    if(auxServers[i].time <= auxServers[i].maxTime){
-      cout << "Found a better solution for server " << i << endl;
-      servers[i].printJobsContent();
-
-      auxServers[i].printJobsContent();
-      cout << "[server " << i << "] cost is " << servers[i].cost << endl;
-      cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
-      // cout << "[server " << i << "] time allocated is " << servers[i].time << endl;
-      // cout << "[server " << i << "] new time allocated is " << auxServers[i].time << endl;
-      totalCost = calculateCost(auxServers, unallocatedJobs, c);
-    }
-  }
-
-  // otimização
-  // if(newCost < servers[i].cost){
-  //   if(newTime <= auxServers[i].maxTime){
+  // if(auxServers[i].cost < servers[i].cost){
+  //   if(auxServers[i].time <= auxServers[i].maxTime){
   //     cout << "Found a better solution for server " << i << endl;
   //     servers[i].printJobsContent();
 
-  //     // auxServers[i].printJobsContent();
+  //     auxServers[i].printJobsContent();
   //     cout << "[server " << i << "] cost is " << servers[i].cost << endl;
-  //     cout << "[server " << i << "] new cost is " << newCost << endl;
+  //     cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
   //     // cout << "[server " << i << "] time allocated is " << servers[i].time << endl;
   //     // cout << "[server " << i << "] new time allocated is " << auxServers[i].time << endl;
-  //     // totalCost = calculateCost(auxServers, unallocatedJobs, c);
+  //     totalCost = calculateCost(auxServers, unallocatedJobs, c);
   //   }
   // }
+
+  // otimização
+  if(newCost < servers[i].cost){
+    if(newTime <= servers[i].maxTime){
+      cout << "Found a better solution for server " << i << endl;
+      servers[i].printJobsContent();
+
+      cout << "[server " << i << "] cost is " << servers[i].cost << endl;
+      cout << "[server " << i << "] new cost is " << newCost << endl;
+      // cout << "[server " << i << "] time allocated is " << servers[i].time << endl;
+      // cout << "[server " << i << "] new time allocated is " << auxServers[i].time << endl;
+      // auxServers[i].jobs[j].first = k;
+      // auxServers[i].jobs[j].second = c[i][k];
+      // auxServers[i].printJobsContent();
+      // totalCost = calculateCost(auxServers, unallocatedJobs, c);
+    }
+  }
 }
 
-void swap2(vector<Server> &servers, int i, int j, int k){
+// swap de jobs não alocados, verifica e calcula custos
+void swapUnallocatedJobs(vector<Server> &servers, int i, int j, int k){
   int totalCost;
   int newTime, newCost; // variaveis para comparar com os valores antigos
   vector<Server> auxServers(servers); // copia do vetor original (sujeito a otimização)
@@ -168,60 +175,45 @@ void swap2(vector<Server> &servers, int i, int j, int k){
   }
 }
 
-void swapShort(vector<Server> &servers, int i, int j, int k){
-  int totalCost;
-  int newTime, newCost; // variaveis para comparar com os valores antigos
-  vector<Server> auxServers(servers); // copia do vetor original (sujeito a otimização)
-  int jobIndex = auxServers[i].jobs[j].first;
+// simula a operação de swap retornando o custo da nova solução
+int simulateSwapUnallocatedJobs(Server server, int j, int k){
+  if(unallocatedJobs[k] == true){
+    int newTime, newCost; // variaveis para comparar com os valores antigos
+    int jobIndex = server.jobs[j].first;
 
-  // variaveis para otimizar a função
-  newCost = servers[i].cost - c[i][jobIndex] + c[i][k];
-  newTime = servers[i].time - t[i][jobIndex] + t[i][k];
+    newTime = server.time - t[server.id][jobIndex] + t[server.id][k];
 
-  if(newTime <= auxServers[i].maxTime){
-    auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
-    auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
+    if(newTime <= server.maxTime){
+      newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
+      return newCost;
+    }
 
-    auxServers[i].jobs[j].first = k;
-    auxServers[i].jobs[j].second = c[i][k];
-    totalCost = calculateCost(auxServers, unallocatedJobs, c);
   }
+  return -1; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
 }
 
-int swapShortSingle(Server server, int i, int j){
-  if(unallocatedJobs[j] == true){
-    int newTime, newCost; // variaveis para comparar com os valores antigos
-    Server auxServer(server); // copia do servidor original (sujeito a otimização)
-    int jobIndex = auxServer.jobs[i].first;
+// swap de jobs não alocados sem verificação e cálculo de custo
+void swap(Server &server, int j, int k){
+  int jobIndex = server.jobs[j].first;
+  server.cost = server.cost - c[server.id][jobIndex] + c[server.id][k];
+  server.time = server.time - t[server.id][jobIndex] + t[server.id][k];
 
-    newCost = auxServer.cost - c[server.id][jobIndex] + c[server.id][j];
-    newTime = auxServer.time - t[server.id][jobIndex] + t[server.id][j];
-
-    if(newTime <= auxServer.maxTime){
-      auxServer.cost = auxServer.cost - c[server.id][jobIndex] + c[server.id][j];
-      auxServer.time = auxServer.time - t[server.id][jobIndex] + t[server.id][j];
-
-      auxServer.jobs[i].first = j;
-      auxServer.jobs[i].second = c[server.id][j];
-
-      return auxServer.cost;
-    }
-  }
-
-  return -1;
+  server.jobs[j].first = k;
+  server.jobs[j].second = c[server.id][k];
 }
 
 // to do
 void vnd(vector<Server> servers, int r){
   int k = 1;
 
-  while(k <= r) {
-    for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
-      for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
-        for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
-          if(swapShortSingle(servers[i], j, k) > 0 && swapShortSingle(servers[i], j, k) < servers[i].cost){
-            cout << "Encontrado uma solução melhor, substitua a original" << endl;
-          }
+  for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
+    for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
+      for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
+        if(simulateSwapUnallocatedJobs(servers[i], j, k) > 0 && simulateSwapUnallocatedJobs(servers[i], j, k) < servers[i].cost){
+          cout << "Encontrado uma solução melhor, para o servidor: " << i << endl;
+          cout << "Antigo custo: " << servers[i].cost << endl;
+          swap(servers[i], j, k);
+          cout << "Novo custo: " << servers[i].cost << endl;
         }
       }
     }
@@ -232,16 +224,16 @@ void generateNeighborhood(vector<Server> &servers, int &numberOfJobs){
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
     for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
       for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
-        swap2(servers, i, j, k);
+        swapUnallocatedJobs(servers, i, j, k);
       }
     }
   }
 }
 
-void generateNeighborhoodSingle(Server server, int &numberOfJobs){
+void generateNeighborhoodSimple(Server server, int &numberOfJobs){
   for(int i = 0; i < server.jobs.size(); i++){ // quantidade de jobs de cada servidor
     for(int j = i + 1; j < numberOfJobs; j++){ // quantidade total de jobs
-      swapShortSingle(server, i, j);
+      // swap(server, i, j);
     }
   }
 }
@@ -251,9 +243,9 @@ int main(int argc, char *argv[]){
   // ========== definição de variáveis ===================
 
   vector<int> b; // vetor de capacidade
+  vector<Server> servers; // vetor de servidores
   // vector<vector<int>> t; // vetor de tempo
   // vector<vector<int>> c; // vetor de custo
-  vector<Server> servers; // vetor de servidores
   // vector<bool> unallocatedJobs; // vetor de flags para cada job alocado ou não
   // int numberOfServers, numberOfJobs, penalty = 0;
 
@@ -335,7 +327,6 @@ int main(int argc, char *argv[]){
   int totalCost = 0; // custo da solução
 
   // criando os servidores e alocando tantos jobs quanto possivel
-  // precisa de uma refatoração ainda.
   for(int i = 0; i < numberOfServers; i++){
     servers.push_back(Server());
     servers[i].id = i;
@@ -363,20 +354,22 @@ int main(int argc, char *argv[]){
   totalCost = calculateCost(servers, unallocatedJobs, c);
 
   // swap()
-  for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
-    for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
-      for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
-        swap2(servers, i, j, k);
-      }
-    }
-  }
+  // for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
+  //   for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
+  //     for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
+  //       swap2(servers, i, j, k);
+  //     }
+  //   }
+  // }
+
+  // vnd();
 
   // swap(servers, unallocatedJobs, 0, 1, 6, t, c); // test
   // swapShort(servers, 0, 1, 6);
   // showAllocationLogs(auxServers, b, totalCost, unallocatedJobs, t);
 
   // VND
-  // to do
+  vnd(servers, 2);
 
   // meta-heuristica
   // to do (opcional)
