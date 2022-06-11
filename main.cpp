@@ -14,7 +14,6 @@ vector<vector<int>> c; // vetor de custo
 vector<bool> unallocatedJobs; // vetor de flags para cada job alocado ou não
 int numberOfServers, numberOfJobs, penalty = 0;
 
-
 class Server {
   public:    
     int id;         // identificador do servidor
@@ -48,7 +47,6 @@ void print2DVector(vector<vector<int>> vec){
   cout << endl;
 }
 
-
 int calculateCost(vector<Server> servers){
   int cost = 0;
  
@@ -67,6 +65,7 @@ int calculateCost(vector<Server> servers){
   return cost;
 }
 
+// função que verifica quantos jobs não foram alocados.
 void getUnallocatedJobs(vector<bool> unallocatedJobs){
   int count = 0;
   for(auto job : unallocatedJobs){
@@ -75,7 +74,7 @@ void getUnallocatedJobs(vector<bool> unallocatedJobs){
   cout << "Number of unallocated jobs: " << count << endl;
 }
 
-// swap de jobs alocados e não alocados, verifica e calcula custos
+// swap de jobs alocados e não alocados, verifica e calcula custos.
 void swapAll(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int j, int k, vector<vector<int>> &t, vector<vector<int>> &c){
   int totalCost;
   int newTime, newCost; // variaveis para comparar com os valores antigos
@@ -122,7 +121,7 @@ void swapAll(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int 
   }
 }
 
-// swap de jobs não alocados, verifica e calcula custos
+// swap de jobs não alocados, verifica e calcula custos.
 void swapUnallocatedJobs(vector<Server> &servers, int i, int j, int k){
   int totalCost;
   int newTime, newCost; // variaveis para comparar com os valores antigos
@@ -151,7 +150,7 @@ void swapUnallocatedJobs(vector<Server> &servers, int i, int j, int k){
   }
 }
 
-// simula a operação de swap retornando o custo da nova solução
+// simula a operação de swap retornando o custo da nova solução.
 int simulateSwapUnallocatedJobs(Server server, int j, int k){
   if(unallocatedJobs[k] == true){
     int newTime, newCost; // variaveis para comparar com os valores antigos
@@ -168,7 +167,7 @@ int simulateSwapUnallocatedJobs(Server server, int j, int k){
   return -1; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
 }
 
-// swap de jobs não alocados sem verificação e cálculo de custo
+// swap de jobs não alocados sem verificação e cálculo de custo.
 void swap(Server &server, int j, int k){
   int jobIndex = server.jobs[j].first;
   server.cost = server.cost - c[server.id][jobIndex] + c[server.id][k];
@@ -180,20 +179,21 @@ void swap(Server &server, int j, int k){
   unallocatedJobs[k] = false;
 }
 
+// função que printa o vetor de jobs não alocados.
 void printUnallocated(){
   for(int i = 0; i < unallocatedJobs.size(); i++){
-    cout << "Job " << i << ": " << unallocatedJobs[i] << endl; 
+    cout << "Job " << i << ": " << unallocatedJobs[i] << "; "; 
   }
 }
 
-// vnd, incompleto
+// vnd, incompleto falta implementar um movimento de vizinhança
 void vnd(vector<Server> &servers, int r){
-  int k = 1;
+  int k = 1; // controle de movimento de vizinhança
 
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
     int bestCost = servers[i].cost;
     bool foundBest = false;
-    pair <int, int> bestSwap;
+    pair <int, int> bestSwap; // posição dos jobs a serem trocados
 
     for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
       for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
@@ -261,26 +261,32 @@ void showAllocationLogs(vector<Server> servers, vector<int> b, int &totalCost, v
   // cout << "Solution cost: " << cost << endl;
 }
 
-int main(int argc, char *argv[]){
+// Função que cria os servidores aloca tantos jobs quanto possivel
+void heuristicaDeContrucao(vector<Server> &servers, vector<int> &b){
+  for(int i = 0; i < numberOfServers; i++){
+    servers.push_back(Server());
+    servers[i].id = i;
+    servers[i].maxTime = b[i];
+    for(int j = 0; j < numberOfJobs; j++){
+      if(t[i][j] + servers[i].time <= servers[i].maxTime){
+        if(unallocatedJobs[j] == true){
+          pair<int, int> currentJob (j, c[i][j]); // pegando separadamente o indice do job e seu custo
 
-  // ========== definição de variáveis ===================
+          servers[i].jobs.push_back(currentJob); // insere o job e seu custo no vetor de jobs
+          unallocatedJobs[j] = false; // mudar a flag
+          servers[i].cost += c[i][j]; // atualiza custo
+          servers[i].time += t[i][j]; // atualiza tempo alocado
+        }
+      }
+    }
+  }
+}
 
-  vector<int> b; // vetor de capacidade
-  vector<Server> servers; // vetor de servidores
-  // vector<vector<int>> t; // vetor de tempo
-  // vector<vector<int>> c; // vetor de custo
-  // vector<bool> unallocatedJobs; // vetor de flags para cada job alocado ou não
-  // int numberOfServers, numberOfJobs, penalty = 0;
-
-  // ============== Input do arquivo =====================
-
-  string fileName = argv[1];
-  ifstream myfile (fileName);
+void handleInputFile(ifstream &myfile, vector<int> &b){
   string line;
+  int lineCounter = 1;
   int num;
   int temp = 0;
-
-  int lineCounter = 1;
 
   if(myfile.is_open()) {
     while (getline(myfile,line)){
@@ -339,38 +345,29 @@ int main(int argc, char *argv[]){
   else {
     cout << "Unable to open file";
   }
+}
 
+int main(int argc, char *argv[]){
 
-  // ========================================================
-  // ===== heuristica de construção (algoritmo guloso) ======
-  // ========================================================
+  // ========== definição de variáveis ===================
 
-  // Implementação simples de um algoritmo guloso longe do ideal
-
+  vector<int> b; // vetor de capacidade
+  vector<Server> servers; // vetor de servidores
   int totalCost = 0; // custo da solução
 
-  // criando os servidores e alocando tantos jobs quanto possivel
-  for(int i = 0; i < numberOfServers; i++){
-    servers.push_back(Server());
-    servers[i].id = i;
-    servers[i].maxTime = b[i];
-    for(int j = 0; j < numberOfJobs; j++){
-      if(t[i][j] + servers[i].time <= servers[i].maxTime){
-        if(unallocatedJobs[j] == true){
-          pair<int, int> currentJob (j, c[i][j]); // pegando separadamente o indice do job e seu custo
+  // ============== Input do arquivo =====================
 
-          servers[i].jobs.push_back(currentJob); // insere o job e seu custo no vetor de jobs
-          unallocatedJobs[j] = false; // mudar a flag
-          servers[i].cost += c[i][j]; // atualiza custo
-          servers[i].time += t[i][j]; // atualiza tempo alocado
-        }
-      }
-    }
-  }
+  string fileName = argv[1];
+  ifstream myfile (fileName);
+  handleInputFile(myfile, b);
 
-  // ====== vizinhaça ==========
+  // ===== heuristica de construção (algoritmo guloso) ======
+
+  // Implementação simples de um algoritmo guloso longe do ideal
+  heuristicaDeContrucao(servers, b);
+
+  // ============== vizinhaça ==============================
   totalCost = calculateCost(servers);
-
   // VND
   // cout << "=========================="<< endl;
   // showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);

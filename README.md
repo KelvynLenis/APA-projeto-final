@@ -7,7 +7,7 @@ a capacidade dos mesmos, e de forma a minimizar o custo total para a empresa.
 
 ## Tarefas
 Esse projeto contém os seguintes entregáveis:
-- [ ] Implementação de ao menos uma heurística de construção, que nada mais é do que um algoritmo guloso para geração de uma solução viável.
+- [x] Implementação de ao menos uma heurística de construção, que nada mais é do que um algoritmo guloso para geração de uma solução viável.
 - [ ] Implementação de pelo menos 2 movimentos de vizinhança.
 - [ ] Implementação do algoritmo de busca local chamado VND (Variable Neighborhood Descent)
 - [ ] Implementação de uma meta-heurística (OPCIONAL). Sugestões: GRASP ou ILS

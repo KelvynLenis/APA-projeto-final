@@ -10,6 +10,7 @@
     "string": "cpp",
     "iterator": "cpp",
     "map": "cpp",
-    "utility": "cpp"
+    "utility": "cpp",
+    "algorithm": "cpp"
   }
 }
