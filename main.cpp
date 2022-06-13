@@ -7,6 +7,7 @@
 #include <map>
 #include <utility> 
 #include <algorithm>
+#include <chrono>
 
 using namespace std;
 vector<vector<int>> t; // vetor de tempo
@@ -36,6 +37,16 @@ class Server {
         cost += job.second;
       }
     }
+
+    int getIndex(int value){
+      for(int i = 0; i < jobs.size(); i++){
+        if(jobs[i].first == value){
+          return i;
+        }
+      }
+
+      return -1;
+    }
 };
 
 void print2DVector(vector<vector<int>> vec){
@@ -50,10 +61,9 @@ void print2DVector(vector<vector<int>> vec){
 int calculateCost(vector<Server> servers){
   int cost = 0;
  
-  for(int i = 0; i < servers.size(); i++){
-    for(int j = 0; j < servers[i].jobs.size(); j++){
-      cost += servers[i].jobs[j].second;
-    }
+  for(auto server : servers){
+    // cout << "server " << server.id << " cost " << server.cost << endl;
+    cost += server.cost;
   }
 
   for(auto job : unallocatedJobs){
@@ -74,82 +84,6 @@ void getUnallocatedJobs(vector<bool> unallocatedJobs){
   cout << "Number of unallocated jobs: " << count << endl;
 }
 
-// swap de jobs alocados e não alocados, verifica e calcula custos.
-void swapAll(vector<Server> &servers, vector<bool> &unallocatedJobs, int i, int j, int k, vector<vector<int>> &t, vector<vector<int>> &c){
-  int totalCost;
-  int newTime, newCost; // variaveis para comparar com os valores antigos
-  vector<Server> auxServers(servers); // copia do vetor original (sujeito a otimização)
-  int jobIndex = auxServers[i].jobs[j].first;
-
-  // variaveis para otimizar a função
-  newCost = servers[i].cost - c[i][jobIndex] + c[i][k];
-  newTime = servers[i].time - t[i][jobIndex] + t[i][k];
-  
-  // auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
-  // auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
-
-  // troca não otimizada
-  // if(auxServers[i].cost < servers[i].cost){
-  //   if(auxServers[i].time <= auxServers[i].maxTime){
-  //     cout << "Found a better solution for server " << i << endl;
-  //     servers[i].printJobsContent();
-
-  //     auxServers[i].printJobsContent();
-  //     cout << "[server " << i << "] cost is " << servers[i].cost << endl;
-  //     cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
-  //     // cout << "[server " << i << "] time allocated is " << servers[i].time << endl;
-  //     // cout << "[server " << i << "] new time allocated is " << auxServers[i].time << endl;
-  //     totalCost = calculateCost(auxServers, unallocatedJobs, c);
-  //   }
-  // }
-
-  // otimização
-  if(newCost < servers[i].cost){
-    if(newTime <= servers[i].maxTime){
-      cout << "Found a better solution for server " << i << endl;
-      servers[i].printJobsContent();
-
-      cout << "[server " << i << "] cost is " << servers[i].cost << endl;
-      cout << "[server " << i << "] new cost is " << newCost << endl;
-      // cout << "[server " << i << "] time allocated is " << servers[i].time << endl;
-      // cout << "[server " << i << "] new time allocated is " << auxServers[i].time << endl;
-      // auxServers[i].jobs[j].first = k;
-      // auxServers[i].jobs[j].second = c[i][k];
-      // auxServers[i].printJobsContent();
-      // totalCost = calculateCost(auxServers, unallocatedJobs, c);
-    }
-  }
-}
-
-// swap de jobs não alocados, verifica e calcula custos.
-void swapUnallocatedJobs(vector<Server> &servers, int i, int j, int k){
-  int totalCost;
-  int newTime, newCost; // variaveis para comparar com os valores antigos
-  vector<Server> auxServers(servers); // copia do vetor original (sujeito a otimização)
-  int jobIndex = auxServers[i].jobs[j].first;
-  if(unallocatedJobs[k] == true){
-    
-    auxServers[i].cost = auxServers[i].cost - c[i][jobIndex] + c[i][k];
-    auxServers[i].time = auxServers[i].time - t[i][jobIndex] + t[i][k];
-
-    auxServers[i].jobs[j].first = k;
-    auxServers[i].jobs[j].second = c[i][k];
-
-    // troca não otimizada
-    if(auxServers[i].cost < servers[i].cost){
-      if(auxServers[i].time <= auxServers[i].maxTime){
-        cout << "Found a better solution for server " << i << endl;
-        servers[i].printJobsContent();
-
-        auxServers[i].printJobsContent();
-        cout << "[server " << i << "] cost is " << servers[i].cost << endl;
-        cout << "[server " << i << "] new cost is " << auxServers[i].cost << endl;
-        totalCost = calculateCost(auxServers);
-      }
-    }
-  }
-}
-
 // simula a operação de swap retornando o custo da nova solução.
 int simulateSwapUnallocatedJobs(Server server, int j, int k){
   if(unallocatedJobs[k] == true){
@@ -160,6 +94,45 @@ int simulateSwapUnallocatedJobs(Server server, int j, int k){
 
     if(newTime <= server.maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
+      return newCost;
+    }
+
+  }
+  return -1; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
+}
+
+// Função que dado um job encontrar em qual servidor ele está inserido.
+int getServer(vector<Server> servers, int job){
+  for(int i = 0; i < servers.size(); i++){
+    for(int j = 0; j < servers[i].jobs.size(); j++){
+      if(servers[i].jobs[j].first == job){
+        int serverAndJobIndex = i;
+        return serverAndJobIndex;
+      }
+    }
+  }
+  return -1;
+}
+
+// Função que simular a troca de jobs entre servidores
+int simulateExchangeJobs(vector<Server> servers, Server server, int j, int k){
+  if(unallocatedJobs[k] == false){
+    int newTime, newTime2, newCost, newCost2; // variaveis para comparar com os valores antigos
+    int jobIndex = server.jobs[j].first;
+    int targetServerIndex = getServer(servers, k); // par que contém o servidor de origem e o indice do job nesse servidor.
+    
+    if( targetServerIndex < 0){
+      return -1;
+    }
+
+    newTime = server.time - t[server.id][jobIndex] + t[server.id][k];
+    newTime2 = servers[targetServerIndex].time - t[targetServerIndex][k] + t[targetServerIndex][jobIndex];
+    
+    if(newTime <= server.maxTime && newTime2 <= servers[targetServerIndex].maxTime){
+      newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
+      newCost2 = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
+      // cout << newCost << endl;
+      // cout << newCost2 << endl;
       return newCost;
     }
 
@@ -179,82 +152,127 @@ void swap(Server &server, int j, int k){
   unallocatedJobs[k] = false;
 }
 
-// função que printa o vetor de jobs não alocados.
-void printUnallocated(){
-  for(int i = 0; i < unallocatedJobs.size(); i++){
-    cout << "Job " << i << ": " << unallocatedJobs[i] << "; "; 
-  }
-}
-
-// vnd, incompleto falta implementar um movimento de vizinhança
-void vnd(vector<Server> &servers, int r){
-  int k = 1; // controle de movimento de vizinhança
-
-  for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
-    int bestCost = servers[i].cost;
-    bool foundBest = false;
-    pair <int, int> bestSwap; // posição dos jobs a serem trocados
-
-    for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
-      for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
-        int tempCost = simulateSwapUnallocatedJobs(servers[i], j, k);
-        if(tempCost > 0 && tempCost < servers[i].cost){
-          // cout << "Encontrada uma solução melhor que a solução original, para o servidor: " << i << endl;
-          // cout << "Encontrada uma solução ainda melhor do que a anterior, para o servidor: " << i << endl;
-          // cout << "Antigo custo: " << servers[i].cost << endl;
-          // cout << "Novo custo: " << tempCost << endl;
-          if(tempCost < bestCost){
-            bestCost = tempCost;
-            bestSwap.first = j;
-            bestSwap.second = k;
-            foundBest = true;
-          }
+// Função que tenta inserir jobs não alocados nos servidores com espaço.
+void refit(vector<Server> &servers, vector<int> &b){
+  for(int i = 0; i < servers.size(); i++){
+    for(int j = 0; j < unallocatedJobs.size(); j++){
+      if(unallocatedJobs[j] == true){
+        int time = t[i][j];
+        if(servers[i].time + time <= servers[i].maxTime){
+          pair<int, int> newJob;
+          newJob.first = j;
+          newJob.second = c[i][j];
+          servers[i].jobs.push_back(newJob);
+          servers[i].cost += c[i][j];
+          servers[i].time += time;
+          unallocatedJobs[j] = false;
         }
       }
     }
-    if (foundBest) {
-      cout << "Encontrada a melhor vizinhança para o servidor: " << i << endl;
-      cout << "Antigo custo: " << servers[i].cost << endl;
-    	swap(servers[i], bestSwap.first, bestSwap.second);
-      cout << "Novo custo: " << servers[i].cost << endl;
-  	}
   }
 }
 
-void generateNeighborhood(vector<Server> &servers, int &numberOfJobs){
+/* Função que faz a troca de dois jobs entre servidores
+Parametros:
+  Servers: apontador para um vetor de servidores
+  Inteiro i: indice do servidor origem.
+  Inteiro j: índice do job do servidor origem.
+  Inteiro k: índice do job do servidor de destino.*/
+void exchange(vector<Server> &servers, int i, int j, int k){
+  int jobIndex = servers[i].jobs[j].first;  // resgatando o indice do job j na tabela de tempo e custo.
+  int targetServerIndex = getServer(servers, k); // indice do servidor que contem o job de indice k.
+
+  servers[i].time = servers[i].time - t[i][jobIndex] + t[i][k];
+  servers[targetServerIndex].time = servers[targetServerIndex].time - t[targetServerIndex][k] + t[targetServerIndex][jobIndex];
+  
+  servers[i].cost = servers[i].cost - c[i][jobIndex] + c[i][k];
+  servers[targetServerIndex].cost = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
+
+  servers[i].jobs[j].first = k; //substituindo o índice geral do job.
+  servers[i].jobs[j].second = c[i][k]; // substituindo o custo dos jobs.
+
+  int index = servers[targetServerIndex].getIndex(k);
+  servers[targetServerIndex].jobs[index].first = jobIndex; //substituindo o índice geral do job.
+  servers[targetServerIndex].jobs[index].second = c[targetServerIndex][jobIndex]; // substituindo o custo dos jobs.
+}
+
+// função que printa o vetor de jobs não alocados.
+void printUnallocated(){
+  cout << "Unallocated jobs: ";
+  for(int i = 0; i < unallocatedJobs.size(); i++){
+    if(unallocatedJobs[i] == true){
+      cout << "Job " << i << "; "; 
+    }
+  }
+  cout << endl;
+}
+
+// vnd para encontrar melhores vizinhanças
+void vnd(vector<Server> &servers, vector<int> b){
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
-    for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
-      for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
-        swapUnallocatedJobs(servers, i, j, k);
+    int bestCost = servers[i].cost; // inicia a variável bestCost com o custo do servidor atual.
+    pair <int, int> bestSwap; // posição dos jobs a serem trocados.
+    int move = 1; // controle de movimento de vizinhança
+
+    while(move <= 2){
+      bool foundBest = false; // flag para indicar se encontrou uma melhor solução.
+      for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
+      
+        for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
+          int tempCost = servers[i].cost; // resetando a variavel de custo temporário.
+          
+          if(move == 1){
+            tempCost = simulateSwapUnallocatedJobs(servers[i], j, k);
+          }
+          else if(move == 2){
+            tempCost = simulateExchangeJobs(servers, servers[i], j, k);            
+          }
+
+          if(tempCost > 0 && tempCost < servers[i].cost){
+            if(tempCost < bestCost){
+              bestCost = tempCost; // salva o melhor tempo encontrado.
+              bestSwap.first = j; // salva a posição do job atual.
+              bestSwap.second = k; // define o alvo da troca.
+              foundBest = true; // seta a flag indicando que encontrou uma solução melhor.
+            }
+          }
+        }
       }
+      if (foundBest && move == 1) {
+        cout << "Encontrada a melhor vizinhança para o servidor: " << i << endl;
+        cout << "Antigo custo: " << servers[i].cost << endl;
+        swap(servers[i], bestSwap.first, bestSwap.second);
+        cout << "Novo custo: " << servers[i].cost << endl;
+      }
+      else if (foundBest && move == 2){
+        // cout << "============= EXCHANGE ================" << endl;
+        cout << "[EXCHANGE] Encontrada a melhor vizinhança para o servidor: " << i << endl;
+        cout << "Antigo custo: " << servers[i].cost << endl;
+        exchange(servers, i, bestSwap.first, bestSwap.second);
+        cout << "Novo custo: " << servers[i].cost << endl;
+      }
+      move++;
     }
   }
+
+  refit(servers, b);
 }
 
-void generateNeighborhoodSimple(Server server, int &numberOfJobs){
-  for(int i = 0; i < server.jobs.size(); i++){ // quantidade de jobs de cada servidor
-    for(int j = i + 1; j < numberOfJobs; j++){ // quantidade total de jobs
-      // swap(server, i, j);
-    }
-  }
-}
-
-void showAllocationLogs(vector<Server> servers, vector<int> b, int &totalCost, vector<bool> unallocatedJobs, vector<vector<int>> t){
+// Função para trazer uma analise da alocação de cada servidor.
+void showAllocationLogs(vector<Server> &servers, vector<int> b, int &totalCost, vector<bool> unallocatedJobs, vector<vector<int>> t){
   for(int i = 0; i < servers.size(); i++){
     int tempTime = 0;
-    int cost = 0;
     for(int j = 0; j < servers[i].jobs.size(); j++){
       int jobIndex = servers[i].jobs[j].first; // Key-value na qual a key é o número do job e o value é o custo associado
 
-      // cout << servers[i].jobs[j].second << "; "; // custo c de cada job
       cout << servers[i].jobs[j].first << ", "; // número de cada job
+      // cout << servers[i].jobs[j].second << "; "; // custo c de cada job
       tempTime += t[i][jobIndex]; // somando o tempo relativo alocado para cada servidor
     }
-    cost = servers[i].cost;
     cout << endl;
     cout << "[Server " << i << "] capacity is " << b[i] << endl;
     cout << "[Server "<< i << "] Total time allocated is " << tempTime << endl;
-    cout << "[Server " << i << "] Cost is " << cost << endl;
+    cout << "[Server " << i << "] Cost is " << servers[i].cost << endl;
     cout << endl;
   }
   int cost = calculateCost(servers);
@@ -282,6 +300,7 @@ void heuristicaDeContrucao(vector<Server> &servers, vector<int> &b){
   }
 }
 
+// Função para lidar com o input do arquivo e organizar as estruturas de dados do programa.
 void handleInputFile(ifstream &myfile, vector<int> &b){
   string line;
   int lineCounter = 1;
@@ -347,6 +366,14 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
   }
 }
 
+// Função para calcular o Gap.
+float calculateGap(float vHeuristica, float vOtimo){
+  auto result = 0;
+  result = ((vHeuristica - vOtimo) / vOtimo) * 100;
+
+  return result;
+}
+
 int main(int argc, char *argv[]){
 
   // ========== definição de variáveis ===================
@@ -363,22 +390,44 @@ int main(int argc, char *argv[]){
 
   // ===== heuristica de construção (algoritmo guloso) ======
 
-  // Implementação simples de um algoritmo guloso longe do ideal
+  auto tInitHeuristicaDeConstrucao = chrono::steady_clock::now();
   heuristicaDeContrucao(servers, b);
+  auto tEndHeuristicaDeConstrucao = chrono::steady_clock::now();
+
+  auto durationtHeuristicaDeConstrucao = (chrono::duration_cast<chrono::nanoseconds>( tEndHeuristicaDeConstrucao - tInitHeuristicaDeConstrucao ).count());
+  float timeHeuristicaDeConstrucao = (float)durationtHeuristicaDeConstrucao/1000000;
+  int HDCCost = calculateCost(servers);
 
   // ============== vizinhaça ==============================
-  totalCost = calculateCost(servers);
-  // VND
-  // cout << "=========================="<< endl;
-  // showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
+  
+  auto tInitVND = chrono::steady_clock::now();
   cout << "=========================="<< endl;
-  vnd(servers, 2);
+  vnd(servers, b);
   cout << "=========================="<< endl;
-  totalCost = calculateCost(servers);
+  auto tEndVND = chrono::steady_clock::now();
+
+  auto durationVND = (chrono::duration_cast<chrono::nanoseconds>( tEndVND - tInitVND ).count());
+  float timeVND = (float) durationVND/1000000;
+  int VNDCost = calculateCost(servers);
+  
   // showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
 
-  // meta-heuristica
-  // to do (opcional)
- 
+  // Resultados para o GAP
+  cout << endl;
+  cout << "============= Results ============="<< endl;
+  cout << "Tempo de processamento da Heurística de construção: " << timeHeuristicaDeConstrucao << endl;
+  cout << "Tempo de processamento do VND: " << timeVND << endl;
+  cout << "Custo da heurísitca de construção: " << HDCCost << endl;
+  cout << "Custo do VND: " << VNDCost << endl;
+
+  // GAP
+  float heuristicaGap = calculateGap((float) HDCCost, 240);
+  float vndGap = calculateGap((float) VNDCost, 240);
+
+  cout << endl;
+  cout << "============= GAP ================="<< endl;
+  cout << "Gap da heurística: " << heuristicaGap << endl;
+  cout << "Gap do VND: " << vndGap << endl;
+
   return 0;
 }
