@@ -161,8 +161,8 @@ void refit(vector<Server> &servers, vector<int> &b){
       if(unallocatedJobs[j] == true){
         int time = t[i][j];
         if(servers[i].time + time <= servers[i].maxTime){
-          cout << "Antes " << i << " ";
-          servers[i].printJobsContent();
+          // cout << "Antes " << i << " ";
+          // servers[i].printJobsContent();
 
           pair<int, int> newJob;
           newJob.first = j;
@@ -171,8 +171,8 @@ void refit(vector<Server> &servers, vector<int> &b){
           servers[i].cost += c[i][j];
           servers[i].time += time;
           unallocatedJobs[j] = false;
-          cout << "Depois " << i << " ";
-          servers[i].printJobsContent();
+          // cout << "Depois " << i << " ";
+          // servers[i].printJobsContent();
         }
       }
     }
