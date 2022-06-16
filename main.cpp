@@ -310,6 +310,7 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
   int lineCounter = 1;
   int num;
   int temp = 0;
+  int fimT = 0;
 
   if(myfile.is_open()) {
     while (getline(myfile,line)){
@@ -321,6 +322,7 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
       } 
       else if(lineCounter == 2){ // segunda linha
         numberOfServers = stoi(line); // numero de servidores
+        fimT = 7 + numberOfServers;
         // cout << numberOfServers << endl;
       }
       else if(lineCounter == 3){ // terceira linha
@@ -335,7 +337,7 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
           b.push_back(num);
         }
       }
-      else if (lineCounter >= 7 && lineCounter < (7 + numberOfServers)){ // setima linha
+      else if (lineCounter >= 7 && lineCounter < fimT){ // setima linha
         t.push_back(vector<int>());
 
         while( is >> num){
@@ -346,12 +348,12 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
         }
 
         temp++;
-        if(lineCounter == (7 + numberOfServers-1)){
+        if(lineCounter == fimT - 1){
           temp = 0;    
         }
       }
 
-      if (lineCounter > (7 + numberOfServers) && lineCounter <= (12 + numberOfServers)){
+      if (lineCounter > fimT && lineCounter <= fimT + numberOfServers) {
         c.push_back(vector<int>());
         while( is >> num){
           c[temp].push_back(num);
