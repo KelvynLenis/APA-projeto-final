@@ -133,9 +133,9 @@ int simulateExchangeJobs(vector<Server> servers, Server server, int j, int k){
     if(newTime <= server.maxTime && newTime2 <= servers[targetServerIndex].maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
       newCost2 = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
-      if(newCost2 < servers[targetServerIndex].cost){ // verificando se o custo do segundo servidor é viável
+      // if(newCost2 < servers[targetServerIndex].cost){ // verificando se o custo do segundo servidor é viável
+      // }
         return newCost;
-      }
     }
 
   }
@@ -176,6 +176,27 @@ void refit(vector<Server> &servers, vector<int> &b){
   }
 }
 
+vector<Server> refitVND(vector<Server> servers, vector<int> &b){
+  for(int i = 0; i < servers.size(); i++){
+    for(int j = 0; j < unallocatedJobs.size(); j++){
+      if(unallocatedJobs[j] == true){
+        int time = t[i][j];
+        if(servers[i].time + time <= servers[i].maxTime){
+          pair<int, int> newJob;
+          newJob.first = j;
+          newJob.second = c[i][j];
+          servers[i].jobs.push_back(newJob);
+          servers[i].cost += c[i][j];
+          servers[i].time += time;
+          unallocatedJobs[j] = false;
+        }
+      }
+    }
+  }
+
+  return servers;
+}
+
 /* Função que faz a troca de dois jobs entre servidores
 Parametros:
   Servers: apontador para um vetor de servidores
@@ -211,6 +232,14 @@ void printUnallocated(){
   cout << endl;
 }
 
+void unallocatedVector(){
+  cout << "Unallocated jobs: " << endl;
+  for(int i = 0; i < unallocatedJobs.size(); i++){
+      cout << "Job " << i << ": " << unallocatedJobs[i] << ", "; 
+  }
+  cout << endl;
+}
+
 // vnd para encontrar melhores vizinhanças
 vector<Server> vnd(vector<Server> servers, vector<int> b){
 
@@ -219,7 +248,14 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
     pair <int, int> bestSwap; // posição dos jobs a serem trocados.
     int move = 1; // controle de movimento de vizinhança
 
-    while(move <= 2){
+    while(move <= 3){
+      // if( move == 3) {
+      //   servers = refitVND(servers, b);
+      //   return servers;
+      // }
+      // else{
+
+      // }
       bool foundBest = false; // flag para indicar se encontrou uma melhor solução.
       for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
       
@@ -249,9 +285,16 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
       else if (foundBest && move == 2){
         exchange(servers, i, bestSwap.first, bestSwap.second);
       }
+      // else if ( move == 3){
+      //   servers = refitVND(servers, b);
+      // }
       move++;
     }
   }
+
+  // vector<Server> finalMove (servers);
+
+  // refit(servers, b);
 
   return servers;
 }
@@ -333,7 +376,6 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
       if(lineCounter == 5) { // quinta linha
         // preenchendo o vetor b
         while( is >> num){
-          cout << num << ", ";
           b.push_back(num);
         }
       }
@@ -428,6 +470,7 @@ int main(int argc, char *argv[]){
   for(int i = 0; i < 10; i++){
     auto tInitVND = chrono::steady_clock::now();
     copy2Servers = vnd(servers, b);
+    refit(copy2Servers, b);
     auto tEndVND = chrono::steady_clock::now();
 
     auto durationVND = (chrono::duration_cast<chrono::nanoseconds>( tEndVND - tInitVND ).count());
@@ -441,11 +484,13 @@ int main(int argc, char *argv[]){
 
   showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
   printUnallocated();
-  cout << endl;
-  cout << endl;
-  refit(servers, b);
-  showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
-  printUnallocated();
+  // cout << endl;
+  // cout << endl;
+  // refit(servers, b);
+  // servers = refitVND(servers, b);
+  // showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
+  // printUnallocated();
+  // unallocatedVector();
 
   meanVNDTime = meanVNDTime / 10;
   meanVNDCost = meanVNDCost / 10;
