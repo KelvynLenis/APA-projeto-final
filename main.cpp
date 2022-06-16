@@ -161,6 +161,9 @@ void refit(vector<Server> &servers, vector<int> &b){
       if(unallocatedJobs[j] == true){
         int time = t[i][j];
         if(servers[i].time + time <= servers[i].maxTime){
+          cout << "Antes " << i << " ";
+          servers[i].printJobsContent();
+
           pair<int, int> newJob;
           newJob.first = j;
           newJob.second = c[i][j];
@@ -168,6 +171,8 @@ void refit(vector<Server> &servers, vector<int> &b){
           servers[i].cost += c[i][j];
           servers[i].time += time;
           unallocatedJobs[j] = false;
+          cout << "Depois " << i << " ";
+          servers[i].printJobsContent();
         }
       }
     }
@@ -180,6 +185,8 @@ vector<Server> refitVND(vector<Server> servers, vector<int> &b){
       if(unallocatedJobs[j] == true){
         int time = t[i][j];
         if(servers[i].time + time <= servers[i].maxTime){
+          cout << "Antes ";
+          servers[i].printJobsContent();
           pair<int, int> newJob;
           newJob.first = j;
           newJob.second = c[i][j];
@@ -187,6 +194,8 @@ vector<Server> refitVND(vector<Server> servers, vector<int> &b){
           servers[i].cost += c[i][j];
           servers[i].time += time;
           unallocatedJobs[j] = false;
+          cout << "Depois ";
+          servers[i].printJobsContent();
         }
       }
     }
@@ -239,7 +248,7 @@ void unallocatedVector(){
 }
 
 // vnd para encontrar melhores vizinhanças
-vector<Server> vnd(vector<Server> servers, vector<int> b){
+vector<Server> vnd(vector<Server> &servers, vector<int> &b){
 
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
     int costDiff = 0; // diferença do custo da nova solução e da antiga.
@@ -279,12 +288,13 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
       move++;
     }
   }
-  servers = refitVND(servers, b);
+  // servers = refitVND(servers, b);
+  refit(servers, b);
   return servers;
 }
 
 // Função para trazer uma analise da alocação de cada servidor.
-void showAllocationLogs(vector<Server> &servers, vector<int> b, int &totalCost, vector<bool> unallocatedJobs, vector<vector<int>> t){
+void showAllocationLogs(vector<Server> &servers, vector<int> &b){
   for(int i = 0; i < servers.size(); i++){
     int tempTime = 0;
     for(int j = 0; j < servers[i].jobs.size(); j++){
@@ -426,21 +436,21 @@ int main(int argc, char *argv[]){
   float meanHDCTime = 0;
   float meanHDCCost = 0;
 
-  vector<Server> copyServers;
+  vector<Server> buildServers;
 
   for(int i = 0; i < 10; i++){
     auto tInitHeuristicaDeConstrucao = chrono::steady_clock::now();
-    copyServers = heuristicaDeContrucao(servers, b);
+    buildServers = heuristicaDeContrucao(servers, b);
     auto tEndHeuristicaDeConstrucao = chrono::steady_clock::now();
     
     auto durationtHeuristicaDeConstrucao = (chrono::duration_cast<chrono::nanoseconds>( tEndHeuristicaDeConstrucao - tInitHeuristicaDeConstrucao ).count());
     float timeHeuristicaDeConstrucao = (float)durationtHeuristicaDeConstrucao/1000000;
-    float HDCCost = calculateCost(copyServers);
+    float HDCCost = calculateCost(buildServers);
     meanHDCTime += timeHeuristicaDeConstrucao;
     meanHDCCost += HDCCost;
   }
 
-  servers = copyServers;
+  servers = buildServers;
 
   meanHDCTime = meanHDCTime / 10;
   meanHDCCost = meanHDCCost / 10;
@@ -449,31 +459,32 @@ int main(int argc, char *argv[]){
   float meanVNDTime = 0;
   float meanVNDCost = 0;
 
-  vector<Server> copy2Servers;
+  vector<Server> vndServers;
 
   for(int i = 0; i < 10; i++){
     auto tInitVND = chrono::steady_clock::now();
-    copy2Servers = vnd(servers, b);
-    // copy2Servers = refitVND(copy2Servers, b);
+    vndServers = vnd(servers, b);
+    // vndServers = refitVND(vndServers, b);
     auto tEndVND = chrono::steady_clock::now();
 
     auto durationVND = (chrono::duration_cast<chrono::nanoseconds>( tEndVND - tInitVND ).count());
     float timeVND = (float) durationVND/1000000;
-    float VNDCost = calculateCost(copy2Servers);
+    float VNDCost = calculateCost(vndServers);
     meanVNDTime += timeVND;
     meanVNDCost += VNDCost;
   }
 
-  servers = copy2Servers;
+  servers = vndServers;
 
-  showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
-  printUnallocated();
+  // showAllocationLogs(servers, b);
+  // printUnallocated();
   // cout << endl;
+  // cout << "=======================================";
   // cout << endl;
   // refit(servers, b);
   // servers = refitVND(servers, b);
-  // showAllocationLogs(servers, b, totalCost, unallocatedJobs, t);
-  // printUnallocated();
+  showAllocationLogs(servers, b);
+  printUnallocated();
   // unallocatedVector();
 
   meanVNDTime = meanVNDTime / 10;
