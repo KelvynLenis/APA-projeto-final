@@ -133,7 +133,7 @@ int simulateExchangeJobs(vector<Server> servers, Server server, int j, int k){
     if(newTime <= server.maxTime && newTime2 <= servers[targetServerIndex].maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
       newCost2 = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
-      if(newCost2 < servers[targetServerIndex].cost){
+      if(newCost2 < servers[targetServerIndex].cost){ // verificando se o custo do segundo servidor é viável
         return newCost;
       }
     }
