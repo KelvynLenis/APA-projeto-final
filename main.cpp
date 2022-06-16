@@ -216,11 +216,12 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
 
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
     int costDiff = 0; 
-    int bestDiff = 0;
+    int bestDiff = 0; 
     pair <int, int> bestSwap; // posição dos jobs a serem trocados.
     int move = 1; // controle de movimento de vizinhança
 
     while(move <= 2){
+      bestDiff = 0;
       bool foundBest = false; // flag para indicar se encontrou uma melhor solução.
       for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
         for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
@@ -246,6 +247,7 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
       }
       else if (foundBest && move == 2){
         exchange(servers, i, bestSwap.first, bestSwap.second);
+        move = 1;
       }
       move++;
     }
