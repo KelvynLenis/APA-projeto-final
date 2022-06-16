@@ -90,7 +90,6 @@ int simulateSwapUnallocatedJobs(Server server, int j, int k){
   if(unallocatedJobs[k] == true){
     int newTime, newCost; // variaveis para comparar com os valores antigos
     int jobIndex = server.jobs[j].first;
-
     newTime = server.time - t[server.id][jobIndex] + t[server.id][k];
 
     if(newTime <= server.maxTime){
@@ -126,15 +125,14 @@ int simulateExchangeJobs(vector<Server> servers, Server server, int j, int k){
     if( targetServerIndex < 0){
       return -1;
     }
-
     newTime = server.time - t[server.id][jobIndex] + t[server.id][k];
     newTime2 = servers[targetServerIndex].time - t[targetServerIndex][k] + t[targetServerIndex][jobIndex];
     
     if(newTime <= server.maxTime && newTime2 <= servers[targetServerIndex].maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
       newCost2 = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
-      
-      int diff = newCost2 - servers[targetServerIndex].cost + newCost - server.cost;
+
+      int diff = (newCost2 - servers[targetServerIndex].cost) + (newCost - server.cost);
       return diff;
     }
 
@@ -244,8 +242,8 @@ void unallocatedVector(){
 vector<Server> vnd(vector<Server> servers, vector<int> b){
 
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
-    int costDiff = 0; 
-    int bestDiff = 0; 
+    int costDiff = 0; // diferença do custo da nova solução e da antiga.
+    int bestDiff = 0; // melhor diferença encontrada.
     pair <int, int> bestSwap; // posição dos jobs a serem trocados.
     int move = 1; // controle de movimento de vizinhança
 
@@ -276,19 +274,12 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
       }
       else if (foundBest && move == 2){
         exchange(servers, i, bestSwap.first, bestSwap.second);
-        move = 1;
+        // move = 1; // tá dando segmentation fault
       }
-      // else if ( move == 3){
-      //   servers = refitVND(servers, b);
-      // }
       move++;
     }
   }
-
-  // vector<Server> finalMove (servers);
-
-  // refit(servers, b);
-
+  servers = refitVND(servers, b);
   return servers;
 }
 
@@ -463,7 +454,7 @@ int main(int argc, char *argv[]){
   for(int i = 0; i < 10; i++){
     auto tInitVND = chrono::steady_clock::now();
     copy2Servers = vnd(servers, b);
-    refit(copy2Servers, b);
+    // copy2Servers = refitVND(copy2Servers, b);
     auto tEndVND = chrono::steady_clock::now();
 
     auto durationVND = (chrono::duration_cast<chrono::nanoseconds>( tEndVND - tInitVND ).count());
