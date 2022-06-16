@@ -85,7 +85,7 @@ void getUnallocatedJobs(vector<bool> unallocatedJobs){
   cout << "Number of unallocated jobs: " << count << endl;
 }
 
-// Função que simula a operação de swap retornando o custo da nova solução.
+// Função que simula a operação de swap retornando a alteração no custo da solução.
 int simulateSwapUnallocatedJobs(Server server, int j, int k){
   if(unallocatedJobs[k] == true){
     int newTime, newCost; // variaveis para comparar com os valores antigos
@@ -95,11 +95,11 @@ int simulateSwapUnallocatedJobs(Server server, int j, int k){
 
     if(newTime <= server.maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
-      return newCost;
+      return newCost - server.cost;
     }
 
   }
-  return -1; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
+  return 0; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
 }
 
 // Função que dado um job encontrar em qual servidor ele está inserido.
@@ -133,13 +133,13 @@ int simulateExchangeJobs(vector<Server> servers, Server server, int j, int k){
     if(newTime <= server.maxTime && newTime2 <= servers[targetServerIndex].maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
       newCost2 = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
-      // if(newCost2 < servers[targetServerIndex].cost){ // verificando se o custo do segundo servidor é viável
-      // }
-        return newCost;
+      
+      int diff = newCost2 - servers[targetServerIndex].cost + newCost - server.cost;
+      return diff;
     }
 
   }
-  return -1; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
+  return 0; // falhou ao encontrar um job não alocado ou um job com tamanho suficiente para ser alocado
 }
 
 // swap de jobs não alocados.
@@ -244,38 +244,30 @@ void unallocatedVector(){
 vector<Server> vnd(vector<Server> servers, vector<int> b){
 
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
-    int bestCost = servers[i].cost; // inicia a variável bestCost com o custo do servidor atual.
+    int costDiff = 0; 
+    int bestDiff = 0; 
     pair <int, int> bestSwap; // posição dos jobs a serem trocados.
     int move = 1; // controle de movimento de vizinhança
 
-    while(move <= 3){
-      // if( move == 3) {
-      //   servers = refitVND(servers, b);
-      //   return servers;
-      // }
-      // else{
-
-      // }
+    while(move <= 2){
+      bestDiff = 0;
       bool foundBest = false; // flag para indicar se encontrou uma melhor solução.
       for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
-      
         for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
-          int tempCost = servers[i].cost; // resetando a variavel de custo temporário.
-          
+          costDiff = 0; 
+           
           if(move == 1){
-            tempCost = simulateSwapUnallocatedJobs(servers[i], j, k);
+            costDiff = simulateSwapUnallocatedJobs(servers[i], j, k);
           }
           else if(move == 2){
-            tempCost = simulateExchangeJobs(servers, servers[i], j, k);            
+            costDiff = simulateExchangeJobs(servers, servers[i], j, k);            
           }
 
-          if(tempCost > 0 && tempCost < servers[i].cost){
-            if(tempCost < bestCost){
-              bestCost = tempCost; // salva o melhor tempo encontrado.
-              bestSwap.first = j; // salva a posição do job atual.
-              bestSwap.second = k; // define o alvo da troca.
-              foundBest = true; // seta a flag indicando que encontrou uma solução melhor.
-            }
+          if(costDiff < bestDiff){
+            bestDiff = costDiff;
+            bestSwap.first = j; // salva a posição do job atual.
+            bestSwap.second = k; // define o alvo da troca.
+            foundBest = true; // seta a flag indicando que encontrou uma solução melhor.
           }
         }
       }
@@ -284,6 +276,7 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
       }
       else if (foundBest && move == 2){
         exchange(servers, i, bestSwap.first, bestSwap.second);
+        move = 1;
       }
       // else if ( move == 3){
       //   servers = refitVND(servers, b);
