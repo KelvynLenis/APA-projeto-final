@@ -10,10 +10,11 @@
 #include <chrono>
 
 using namespace std;
+
 vector<vector<int>> t; // vetor de tempo
 vector<vector<int>> c; // vetor de custo
 vector<bool> unallocatedJobs; // vetor de flags para cada job alocado ou não
-int numberOfServers, numberOfJobs, penalty = 0;
+int numberOfServers = 0, numberOfJobs = 0, penalty = 0;
 
 class Server {
   public:    
@@ -132,7 +133,9 @@ int simulateExchangeJobs(vector<Server> servers, Server server, int j, int k){
     if(newTime <= server.maxTime && newTime2 <= servers[targetServerIndex].maxTime){
       newCost = server.cost - c[server.id][jobIndex] + c[server.id][k];
       newCost2 = servers[targetServerIndex].cost - c[targetServerIndex][k] + c[targetServerIndex][jobIndex];
-      return newCost;
+      if(newCost2 < servers[targetServerIndex].cost){
+        return newCost;
+      }
     }
 
   }
@@ -210,7 +213,6 @@ void printUnallocated(){
 
 // vnd para encontrar melhores vizinhanças
 vector<Server> vnd(vector<Server> servers, vector<int> b){
-  // vector<Server> servers (origServers);
 
   for(int i = 0; i < servers.size(); i++){ // quantidade de servidores
     int bestCost = servers[i].cost; // inicia a variável bestCost com o custo do servidor atual.
@@ -242,10 +244,7 @@ vector<Server> vnd(vector<Server> servers, vector<int> b){
         }
       }
       if (foundBest && move == 1) {
-        // cout << "Servidor " << i << " Best swap " << servers[i].jobs[bestSwap.first].first << " com " << bestSwap.second << endl;
-        // servers[i].printJobsContent();
         swap(servers, i, bestSwap.first, bestSwap.second);
-        // servers[i].printJobsContent();
       }
       else if (foundBest && move == 2){
         exchange(servers, i, bestSwap.first, bestSwap.second);
@@ -332,6 +331,7 @@ void handleInputFile(ifstream &myfile, vector<int> &b){
       if(lineCounter == 5) { // quinta linha
         // preenchendo o vetor b
         while( is >> num){
+          cout << num << ", ";
           b.push_back(num);
         }
       }
