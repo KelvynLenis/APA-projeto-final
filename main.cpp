@@ -70,7 +70,7 @@ int calculateCost(vector<Server> servers){
 
   for(auto job : unallocatedJobs){
     if(job == true){
-      cost += 1000;
+      cost += penalty;
     }
   }
   return cost;
@@ -260,7 +260,7 @@ vector<Server> vnd(vector<Server> &servers, vector<int> &b){
       bestDiff = 0;
       bool foundBest = false; // flag para indicar se encontrou uma melhor solução.
       for(int j = 0; j < servers[i].jobs.size(); j++){ // quantidade de jobs de cada servidor
-        for(int k = j + 1; k < numberOfJobs; k++){ // quantidade total de jobs
+        for(int k = 0; k < numberOfJobs; k++){ // quantidade total de jobs
           costDiff = 0; 
            
           if(move == 1){
